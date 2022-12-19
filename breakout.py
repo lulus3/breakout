@@ -3,13 +3,13 @@ Activity 004: Breakout in Python Turtle
 Collaborators: Leonardo, Lucas Trovão, Luiz Eller
 Last Modified on: 19/12/2022
 Last Modified by: Luiz Eller
-TODO: Add sounds; Test the game more; Doesn't play twice.
+TODO: Add sounds, Test the game more
 """
 
 import turtle
 
-INITIAL_DX = 1.5
-INITIAL_DY = 2
+INITIAL_DX = 1
+INITIAL_DY = 1.5
 SPEED_UP_COEFICIENT = 1.5
 TOTAL_LIVES = 3
 SPEED_UP_NUM_HITS_1 = 4
@@ -86,6 +86,31 @@ def speed_up_ball():
         ball.dy -= INITIAL_DY * SPEED_UP_COEFICIENT
 
 
+def create_bricks():
+    bricks = []
+    for i_aux in range(8):
+        aux_list = []
+        for j_aux in range(14):
+            if i_aux < 2:
+                aux_list.append(Brick((j_aux * 45) - 295, 380 - 25 * i_aux, "red", 7))
+            elif i_aux < 4:
+                aux_list.append(Brick((j_aux * 45) - 295, 380 - 25 * i_aux, "orange", 5))
+            elif i_aux < 6:
+                aux_list.append(Brick((j_aux * 45) - 295, 380 - 25 * i_aux, "green", 3))
+            else:
+                aux_list.append(Brick((j_aux * 45) - 295, 380 - 25 * i_aux, "yellow", 1))
+        bricks.append(aux_list)
+    return bricks
+
+
+# Initializes variables
+score = 0
+lives = TOTAL_LIVES
+num_hits = 0
+speedup_condition = [True, True, True, True]
+brick_list = []
+play_again = True
+
 # Draws the screen
 screen = turtle.Screen()
 screen.title("My Breakout")
@@ -102,13 +127,6 @@ paddle.color("cyan")
 paddle.shapesize(stretch_wid=1, stretch_len=paddle_len)
 paddle.penup()
 paddle.goto(0, -350)
-
-# Initializes variables
-score = 0
-lives = TOTAL_LIVES
-num_hits = 0
-speedup_condition = [True, True, True, True]
-brick_list = []
 
 # Displays heads-up score
 hud = turtle.Turtle()
@@ -141,19 +159,10 @@ screen.onkeypress(paddle_left, "Left")
 screen.onkeypress(paddle_right, "Right")
 
 # creates and draws bricks on the screen
+brick_list = create_bricks().copy()
 for i in range(8):
-    aux_list = []
     for j in range(14):
-        if i < 2:
-            aux_list.append(Brick((j * 45) - 295, 380 - 25 * i, "red", 7))
-        elif i < 4:
-            aux_list.append(Brick((j * 45) - 295, 380 - 25 * i, "orange", 5))
-        elif i < 6:
-            aux_list.append(Brick((j * 45) - 295, 380 - 25 * i, "green", 3))
-        else:
-            aux_list.append(Brick((j * 45) - 295, 380 - 25 * i, "yellow", 1))
-        aux_list[j].draw_me()
-    brick_list.append(aux_list)
+        brick_list[i][j].draw_me()
 
 while True:
     screen.update()
@@ -163,13 +172,15 @@ while True:
     ball.sety(ball.ycor() + ball.dy)
 
     # brick collision
+    num_hits_this_frame = 0
     if ball.ycor() > 190:
         for i in range(8):
             for j in range(14):
                 if brick_list[i][j] is not None and (
-                        brick_list[i][j].y - 10 < ball.ycor() < brick_list[i][j].y + 10) and (
-                        brick_list[i][j].x - 20 < ball.xcor() < brick_list[i][j].x + 20):
+                        brick_list[i][j].y - 10 <= ball.ycor() <= brick_list[i][j].y + 10) and (
+                        brick_list[i][j].x - 25 <= ball.xcor() <= brick_list[i][j].x + 25):
                     score += brick_list[i][j].score
+                    num_hits_this_frame += 1
                     update_score()
                     num_hits += 1
                     if speedup_condition[2] and i < 2:
@@ -180,6 +191,8 @@ while True:
                         speed_up_ball()
                     ball.dy *= -1
                     brick_list[i][j] = None
+    if num_hits_this_frame == 2:
+        ball.dy *= -1
 
     # collision with left wall
     if ball.xcor() < -305:
@@ -203,7 +216,7 @@ while True:
         ball.sety(-420)
         lives -= 1
         if lives == 0:
-            screen.bye()
+            break
         reset_ball()
         update_score()
 
@@ -220,3 +233,11 @@ while True:
     elif speedup_condition[1] and num_hits >= SPEED_UP_NUM_HITS_2:
         speedup_condition[1] = False
         speed_up_ball()
+
+    if play_again and num_hits == (8*14):
+        brick_list = []
+        play_again = False
+        brick_list = create_bricks().copy()
+        for i in range(8):
+            for j in range(14):
+                brick_list[i][j].draw_me()
