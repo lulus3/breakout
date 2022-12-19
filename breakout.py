@@ -3,7 +3,7 @@ Activity 004: Breakout in Python Turtle
 Collaborators: Leonardo, Lucas Trovão, Luiz Eller
 Last Modified on: 19/12/2022
 Last Modified by: Luiz Eller
-TODO: Add sounds, Test the game more
+TODO: Add sounds; Test the game more; Doesn't play twice.
 """
 
 import turtle
