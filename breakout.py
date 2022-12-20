@@ -2,21 +2,25 @@
 Activity 004: Breakout in Python Turtle
 Collaborators: Leonardo, Lucas Trovão, Luiz Eller
 Last Modified on: 19/12/2022
-Last Modified by: Luiz Eller
-TODO: Add sounds, Test the game more
+Last Modified by: Lucas Trovão
+TODO: Add sounds, Test the game more, Resolution bug 
+        Ball_Size collision, Ball_Reset stop
 """
 
 import turtle
 
+# Declares constants
 INITIAL_DX = 1
 INITIAL_DY = 1.5
-SPEED_UP_COEFICIENT = 1.5
+SPEED_UP_COEFFICIENT = 1.5
 TOTAL_LIVES = 3
 SPEED_UP_NUM_HITS_1 = 4
 SPEED_UP_NUM_HITS_2 = 12
+PADDLE_MOVE_LENGTH = 30
+BALL_SIZE = 0.5
 
 
-# Object brick that represents a brick the player must hit with a ball to destroy
+# Represents a brick the player must hit with the ball to destroy
 class Brick:
     def __init__(self, position_x, position_y, color, score_given):
         self.x = position_x
@@ -25,8 +29,10 @@ class Brick:
         self.score = score_given
         self.brick = turtle.Turtle()
 
-    def __del__(self):
+    def hide(self):
         self.brick.hideturtle()
+        self.x = None
+        self.y = None
 
     def draw_me(self):
         self.brick.speed(0)
@@ -40,7 +46,7 @@ class Brick:
 def paddle_left():
     x = paddle.xcor()
     if x > -315 + paddle_len * 10:
-        x -= 30
+        x -= PADDLE_MOVE_LENGTH
     else:
         x = -315 + paddle_len * 10
     paddle.setx(x)
@@ -49,7 +55,7 @@ def paddle_left():
 def paddle_right():
     x = paddle.xcor()
     if x < 315 - paddle_len * 10:
-        x += 30
+        x += PADDLE_MOVE_LENGTH
     else:
         x = 315 - paddle_len * 10
     paddle.setx(x)
@@ -57,6 +63,7 @@ def paddle_right():
 
 # returns ball to the top center of the paddle
 def reset_ball():
+    # TODO: Add a pause after ball reset while playing
     ball.goto(paddle.xcor(), -330)
     if ball.dy < 0:
         ball.dy *= -1
@@ -72,18 +79,18 @@ def update_score():
 # linear increases the speed of the ball
 def speed_up_ball():
     # for exponential scaling
-    # ball.dx *= SPEED_UP_COEFICIENT
-    # ball.dy *= SPEED_UP_COEFICIENT
+    # ball.dx *= SPEED_UP_COEFFICIENT
+    # ball.dy *= SPEED_UP_COEFFICIENT
 
     if ball.dx > 0:
-        ball.dx += INITIAL_DX * SPEED_UP_COEFICIENT
+        ball.dx += INITIAL_DX * SPEED_UP_COEFFICIENT
     else:
-        ball.dx -= INITIAL_DX * SPEED_UP_COEFICIENT
+        ball.dx -= INITIAL_DX * SPEED_UP_COEFFICIENT
 
     if ball.dy > 0:
-        ball.dy += INITIAL_DY * SPEED_UP_COEFICIENT
+        ball.dy += INITIAL_DY * SPEED_UP_COEFFICIENT
     else:
-        ball.dy -= INITIAL_DY * SPEED_UP_COEFICIENT
+        ball.dy -= INITIAL_DY * SPEED_UP_COEFFICIENT
 
 
 def create_bricks():
@@ -108,10 +115,10 @@ score = 0
 lives = TOTAL_LIVES
 num_hits = 0
 speedup_condition = [True, True, True, True]
-brick_list = []
 play_again = True
 
 # Draws the screen
+# TODO: Fix the screen for different sized monitors
 screen = turtle.Screen()
 screen.title("My Breakout")
 screen.bgcolor("black")
@@ -144,6 +151,7 @@ ball = turtle.Turtle()
 ball.speed(0)
 ball.shape("square")
 ball.color("white")
+ball.shapesize(stretch_wid=BALL_SIZE, stretch_len=BALL_SIZE)
 ball.penup()
 ball.dx = INITIAL_DX
 ball.dy = INITIAL_DY
@@ -172,25 +180,27 @@ while True:
     ball.sety(ball.ycor() + ball.dy)
 
     # brick collision
+    # TODO: Change collision to accommodate different ball sizes
+    #       Add a collision sound effect
     num_hits_this_frame = 0
     if ball.ycor() > 190:
         for i in range(8):
             for j in range(14):
-                if brick_list[i][j] is not None and (
-                        brick_list[i][j].y - 10 <= ball.ycor() <= brick_list[i][j].y + 10) and (
-                        brick_list[i][j].x - 25 <= ball.xcor() <= brick_list[i][j].x + 25):
-                    score += brick_list[i][j].score
-                    num_hits_this_frame += 1
-                    update_score()
-                    num_hits += 1
-                    if speedup_condition[2] and i < 2:
-                        speedup_condition[2] = False
-                        speed_up_ball()
-                    elif speedup_condition[3] and i < 4:
-                        speedup_condition[3] = False
-                        speed_up_ball()
-                    ball.dy *= -1
-                    brick_list[i][j] = None
+                if brick_list[i][j].x is not None:
+                    if (brick_list[i][j].y - 10 <= ball.ycor() <= brick_list[i][j].y + 10) and (
+                            brick_list[i][j].x - 25 <= ball.xcor() <= brick_list[i][j].x + 25):
+                        score += brick_list[i][j].score
+                        num_hits_this_frame += 1
+                        update_score()
+                        num_hits += 1
+                        if speedup_condition[2] and i < 2:
+                            speedup_condition[2] = False
+                            speed_up_ball()
+                        elif speedup_condition[3] and i < 4:
+                            speedup_condition[3] = False
+                            speed_up_ball()
+                        ball.dy *= -1
+                        brick_list[i][j].hide()
     if num_hits_this_frame == 2:
         ball.dy *= -1
 
@@ -212,6 +222,7 @@ while True:
         paddle.shapesize(stretch_wid=1, stretch_len=paddle_len)
 
     # collision with the lower wall
+    # TODO: Add a fail sound effect
     if ball.ycor() < -420:
         ball.sety(-420)
         lives -= 1
@@ -234,8 +245,7 @@ while True:
         speedup_condition[1] = False
         speed_up_ball()
 
-    if play_again and num_hits == (8*14):
-        brick_list = []
+    if play_again and num_hits == (8 * 14):
         play_again = False
         brick_list = create_bricks().copy()
         for i in range(8):
